@@ -1,10 +1,11 @@
-package com.funds.transfer.service;
+package com.funds.transfer.service.impl;
 
 import com.funds.transfer.exception.ExchangeRateException;
 import com.funds.transfer.exception.WrongCurrencyFormatException;
 import com.funds.transfer.model.ExchangeRate;
 import com.funds.transfer.model.ExchangeRateResponse;
 import com.funds.transfer.repository.ExchangeRateRepository;
+import com.funds.transfer.service.ExchangeRateService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     String apiUrl;
 
     @Value("${exchange.api.key}")
-    private String apiKey;
+    String apiKey;
 
     @Autowired
     private RestTemplate restTemplate;

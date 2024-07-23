@@ -1,4 +1,4 @@
-package com.funds.transfer.service;
+package com.funds.transfer.service.impl;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,13 +14,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@SpringBootTest
 @ExtendWith(MockitoExtension.class)
 public class ExchangeRateServiceImplTests {
 
