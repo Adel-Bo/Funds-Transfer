@@ -40,9 +40,7 @@ public class ExchangeRateServiceImplTests {
 
     @Test
     public void testSaveExchangeRates() {
-        Map<String, Double> rates = new HashMap<>();
-        rates.put("USD", 1.0);
-        rates.put("EUR", 0.85);
+       Map<String, Double> rates = getExchangeRatesMap();
 
         exchangeRateService.saveExchangeRates(rates);
 
@@ -52,9 +50,7 @@ public class ExchangeRateServiceImplTests {
     @Test
     public void testGetExchangeRates() {
         ExchangeRateResponse response = new ExchangeRateResponse();
-        Map<String, Double> rates = new HashMap<>();
-        rates.put("USD", 1.0);
-        rates.put("EUR", 0.85);
+        Map<String, Double> rates = getExchangeRatesMap();
         response.setRates(rates);
 
         when(restTemplate.getForObject(apiUrl, ExchangeRateResponse.class)).thenReturn(response);
@@ -69,13 +65,11 @@ public class ExchangeRateServiceImplTests {
 
     @Test
     public void testGetExchangeRate() {
-        Map<String, Double> rates = new HashMap<>();
-        rates.put("EUR", 0.85);
         ExchangeRateResponse response = new ExchangeRateResponse();
+        Map<String, Double> rates = getExchangeRatesMap();
         response.setRates(rates);
 
         when(restTemplate.getForObject(apiUrl + "/USD", ExchangeRateResponse.class)).thenReturn(response);
-        //when(exchangeRateService.getCurrencyExchangeRates("USD")).thenReturn(rates);
 
         Double rate = exchangeRateService.getExchangeRate("USD", "EUR");
 
@@ -144,5 +138,12 @@ public class ExchangeRateServiceImplTests {
         assertThrows(ExchangeRateException.class, () -> {
             exchangeRateService.getCurrencyExchangeRates(currency);
         });
+    }
+
+    private static Map<String, Double> getExchangeRatesMap() {
+        Map<String, Double> rates = new HashMap<>();
+        rates.put("USD", 1.0);
+        rates.put("EUR", 0.85);
+        return rates;
     }
 }

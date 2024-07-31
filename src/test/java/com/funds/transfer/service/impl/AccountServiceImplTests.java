@@ -15,8 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,15 +26,12 @@ public class AccountServiceImplTests {
     @Mock
     private ExchangeRateService exchangeRateService;
 
-    @Mock
-    private Logger log;
-
     @InjectMocks
-    private AccountServiceImpl accountService;
+    private AccountServiceImpl accountService = new AccountServiceImpl();
 
     @BeforeEach
     public void setUp() {
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        accountService.maxThreads = 10;
     }
 
     @Test
@@ -45,16 +40,16 @@ public class AccountServiceImplTests {
         Long toAccountId = 2L, toOwnerId = 2L;
         Double amount = 100.0;
 
-        Account fromAccount = new Account(fromAccountId, fromOwnerId, "USD", 200.0);
-        Account toAccount = new Account(toAccountId, toOwnerId, "EUR", 100.0);
+        Account fromAccount = getCreditAccount(fromAccountId, fromOwnerId, "USD", 200.0);
+        Account toAccount = getDebitAccount(toAccountId, toOwnerId, "EUR", 100.0);
 
         when(accountRepository.findById(fromAccountId)).thenReturn(Optional.of(fromAccount));
         when(accountRepository.findById(toAccountId)).thenReturn(Optional.of(toAccount));
         when(exchangeRateService.getExchangeRate("USD", "EUR")).thenReturn(0.85);
 
-        CompletableFuture<Integer> result = accountService.transferFunds(fromAccountId, toAccountId, amount);
+        CompletableFuture<Boolean> result = accountService.transferFunds(fromAccountId, toAccountId, amount);
 
-        assertEquals(1, result.join());
+        assertTrue(result.join());
         assertEquals(100.0, fromAccount.getBalance());
         assertEquals(185.0, toAccount.getBalance());
         verify(accountRepository, times(1)).save(fromAccount);
@@ -67,15 +62,15 @@ public class AccountServiceImplTests {
         Long toAccountId = 2L, toOwnerId = 2L;
         Double amount = 300.0;
 
-        Account fromAccount = new Account(fromAccountId, fromOwnerId, "USD", 200.0);
-        Account toAccount = new Account(toAccountId, toOwnerId, "EUR", 100.0);
+        Account fromAccount = getCreditAccount(fromAccountId, fromOwnerId, "USD", 200.0);
+        Account toAccount = getDebitAccount(toAccountId, toOwnerId, "EUR", 100.0);
 
         when(accountRepository.findById(fromAccountId)).thenReturn(Optional.of(fromAccount));
         when(accountRepository.findById(toAccountId)).thenReturn(Optional.of(toAccount));
 
-        CompletableFuture<Integer> result = accountService.transferFunds(fromAccountId, toAccountId, amount);
+        CompletableFuture<Boolean> result = accountService.transferFunds(fromAccountId, toAccountId, amount);
 
-        assertEquals(-1, result.join());
+        assertFalse(result.join());
         verify(accountRepository, never()).save(fromAccount);
         verify(accountRepository, never()).save(toAccount);
     }
@@ -88,9 +83,9 @@ public class AccountServiceImplTests {
 
         when(accountRepository.findById(fromAccountId)).thenReturn(Optional.empty());
 
-        CompletableFuture<Integer> result = accountService.transferFunds(fromAccountId, toAccountId, amount);
+        CompletableFuture<Boolean> result = accountService.transferFunds(fromAccountId, toAccountId, amount);
 
-        assertEquals(-1, result.join());
+        assertFalse(result.join());
         verify(accountRepository, never()).save(any(Account.class));
     }
 
@@ -108,5 +103,13 @@ public class AccountServiceImplTests {
         assertEquals("USD", account.getCurrency());
 
         verify(accountRepository, times(1)).save(account);
+    }
+
+    private Account getDebitAccount(Long fromAccountId, Long fromOwnerId, String currency, Double balance) {
+        return new Account(fromAccountId, fromOwnerId, currency, balance);
+    }
+
+    private Account getCreditAccount(Long fromAccountId, Long fromOwnerId, String currency, Double balance) {
+        return new Account(fromAccountId, fromOwnerId, currency, balance);
     }
 }
