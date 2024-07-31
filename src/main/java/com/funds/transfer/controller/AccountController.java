@@ -18,7 +18,9 @@ public class AccountController implements ErrorController {
     @PostMapping("/transfer")
     public ResponseEntity<String> transferFunds(@RequestParam Long fromAccountId, @RequestParam Long toAccountId,
                                                 @RequestParam Double amount) throws ExecutionException, InterruptedException {
-        CompletableFuture<Integer> future = accountService.transferFunds(fromAccountId, toAccountId, amount);
-        return future.get().equals(1) ? ResponseEntity.ok("Transfer successful") : ResponseEntity.ok("Transfer failed");
+        CompletableFuture<Boolean> future = accountService.transferFunds(fromAccountId, toAccountId, amount);
+        return future.get()
+                ? ResponseEntity.ok("Transfer successful")
+                : ResponseEntity.badRequest().body("Transfer failed");
     }
 }

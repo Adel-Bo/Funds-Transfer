@@ -9,6 +9,7 @@ import com.funds.transfer.service.ExchangeRateService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -25,11 +26,13 @@ public class AccountServiceImpl implements AccountService {
     @Autowired
     private ExchangeRateService exchangeRateService;
 
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
+    @Value("${server.tomcat.threads.max}")
+    int maxThreads;
 
     @Transactional
     @Async
-    public CompletableFuture<Integer> transferFunds(Long fromAccountId, Long toAccountId, Double amount) {
+    public CompletableFuture<Boolean> transferFunds(Long fromAccountId, Long toAccountId, Double amount) {
+        ExecutorService executorService = Executors.newFixedThreadPool(maxThreads);
         return CompletableFuture.supplyAsync(() -> accountRepository.findById(fromAccountId)
                         .orElseThrow(() -> new AccountNotFoundException("Debit account with id " + fromAccountId + " not found")), executorService)
                 .thenCombineAsync(CompletableFuture.supplyAsync(() -> accountRepository.findById(toAccountId)
@@ -45,14 +48,14 @@ public class AccountServiceImpl implements AccountService {
                     fromAccount.setBalance(fromAccount.getBalance() - amount);
                     toAccount.setBalance(toAccount.getBalance() + convertedAmount);
 
-                    accountRepository.save(fromAccount);
-                    accountRepository.save(toAccount);
+                    saveAccount(fromAccount);
+                    saveAccount(toAccount);
 
-                    return 1;
+                    return true;
                 }, executorService).exceptionally(ex -> {
 
                     log.error("\u001B[31m" + "Transfer Processing Error: [{}]" + "\u001B[0m", ex.getMessage());
-                    return -1;
+                    return false;
                 });
     }
 
